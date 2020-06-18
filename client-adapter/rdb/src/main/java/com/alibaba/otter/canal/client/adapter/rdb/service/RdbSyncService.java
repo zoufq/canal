@@ -1,26 +1,5 @@
 package com.alibaba.otter.canal.client.adapter.rdb.service;
 
-import java.sql.Connection;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.function.Function;
-
-import javax.sql.DataSource;
-
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.alibaba.otter.canal.client.adapter.rdb.config.MappingConfig;
@@ -30,6 +9,17 @@ import com.alibaba.otter.canal.client.adapter.rdb.support.SingleDml;
 import com.alibaba.otter.canal.client.adapter.rdb.support.SyncUtil;
 import com.alibaba.otter.canal.client.adapter.support.Dml;
 import com.alibaba.otter.canal.client.adapter.support.Util;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.function.Function;
 
 /**
  * RDB同步操作业务
@@ -403,6 +393,7 @@ public class RdbSyncService {
      */
     private Map<String, Integer> getTargetColumnType(Connection conn, MappingConfig config) {
         DbMapping dbMapping = config.getDbMapping();
+        // TODO 这里有BUG：这里实际上是要拿目标表的字段类型，但是却用了源表的库名和表名来做缓存的key，当是多线程，从同一个源表同步到不同的目标表，且不同的目标表的字段名称不一致的时候，会发生异常：Target column:  targetColumnName  not matched
         String cacheKey = config.getDestination() + "." + dbMapping.getDatabase() + "." + dbMapping.getTable();
         Map<String, Integer> columnType = columnsTypeCache.get(cacheKey);
         if (columnType == null) {
